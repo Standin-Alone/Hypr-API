@@ -330,7 +330,7 @@ router.route("/signup")
                 } else {
                         
                     UsersSchema.findOne({ RefCode: req.body.refCode }, async (err1, isRefCode) => {
-                        console.warn('REf CODE', isRefCode );
+                        
                         if (isRefCode != null) {
                             UsersSchema.findOne({ f_email: email }, async (err1, res1) => {
                                 
@@ -351,7 +351,7 @@ router.route("/signup")
 
                                             let verification_link = `${process.env.DEV_URL}/user/verifyAccount/${insertRes._id}`;
 
-                                            console.log('pumasok')
+                                            
                             
                                             // SEND TO EMAIL
                                             ejs.renderFile('./views/templates/accountVerificationEmail.ejs',{name:`${fname} ${lname}`,toemail:email,url:verification_link},function(err,data){                                                   

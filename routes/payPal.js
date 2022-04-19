@@ -22,13 +22,25 @@ var total_amount = null;
 var _id = null;
 
 
-router.get('/finalCheckout/:amt/:userId/:cart', (req, res) => {
+router.get('/finalCheckout/:userId/:cart', (req, res) => {
 
     amt = req.params.amt;    
     _id = req.params.userId
     cart = Buffer.from(req.params.cart, 'base64') ;
     clean_cart = JSON.parse(cart.toString());
     item = [];
+
+    shipping_address = {
+        "recipient_name": clean_cart[0].f_shippingAddress[0].name,
+        "line1": clean_cart[0].f_shippingAddress[0].address,
+        "line2": "",
+        "city": clean_cart[0].f_shippingAddress[0].city,
+        "state": clean_cart[0].f_shippingAddress[0].state,
+        "phone":  clean_cart[0].f_shippingAddress[0].mobile,
+        "postal_code": clean_cart[0].f_shippingAddress[0].pincode,
+        "country_code": clean_cart[0].f_shippingAddress[0].country_code
+    };
+    
     
     clean_cart.map((product)=>{
 
@@ -44,23 +56,25 @@ router.get('/finalCheckout/:amt/:userId/:cart', (req, res) => {
 
     });
 
-    console.warn(clean_cart)
+    
     
     total_amount = clean_cart.reduce((prev, current) => prev + (current.f_ProductPrice * current.f_itemQuantity), 0);
-    console.warn('amount',total_amount);
+    
     const create_payment_json = {
-        "intent": "sale",
+        "intent": "order",
         "payer": {
             "payment_method": "paypal"
         },
         "redirect_urls": {
-            "return_url": "http://192.168.1.5:9002/success",
-            "cancel_url": "http://192.168.1.5:9002/cancel"
+            "return_url": "http://192.168.1.6:9002/success",
+            "cancel_url": "http://192.168.1.6:9002/cancel"
         },
         "transactions": [{           
             "item_list": {
-                "items": item
+                "items": item,
+                "shipping_address":shipping_address,
             },
+          
             "amount": {
                 "currency": "USD",
                 "total": total_amount
@@ -69,11 +83,12 @@ router.get('/finalCheckout/:amt/:userId/:cart', (req, res) => {
         }]
     };
 
+    
     paypal.payment.create(create_payment_json, function (error, payment) {
         
         if (error) {
-            
-            res.redirect('/cancelledPayment')
+            console.warn(error);
+            res.redirect('/cancel&paymentTitle=Paypal')
         } else {
             
             for (let i = 0; i < payment.links.length; i++) {
@@ -89,6 +104,7 @@ router.get('/finalCheckout/:amt/:userId/:cart', (req, res) => {
 router.get('/success', async (req, res) => {
     const payerId = req.query.PayerID;
     const paymentId = req.query.paymentId;
+    
     console.log("payerId", payerId, "paymentId", paymentId)
     const execute_payment_json = {
         "payer_id": payerId,
@@ -103,7 +119,7 @@ router.get('/success', async (req, res) => {
     paypal.payment.execute(paymentId, execute_payment_json, async function (error, payment) {
         
         if (error) {
-           res.redirect('/cancelledPayment')
+           res.redirect('/cancel&paymentTitle=Paypal')
         } else {
             var UserDetails = await UsersSchema.findOne({ _id: mongoose.Types.ObjectId(_id) });
             var opts = {
@@ -125,23 +141,17 @@ router.get('/success', async (req, res) => {
                 // console.log(opts);
                 if (err) {
                     console.log("Err in creating order " + err);
-                    res.redirect('/cancelledPayment')
+                    res.redirect('/cancelledPayment&paymentTitle=Paypal')
                 } else if (insertRes != null && insertRes != '') {
-                    console.log(UserDetails._id);
-                    console.log(parseInt(UserDetails.f_wallet) + '----' + parseInt(amt));
-                    await UsersSchema.updateOne({ _id: mongoose.Types.ObjectId(UserDetails._id) }, {
-                        $set: {
-                            f_wallet: parseInt(UserDetails.f_wallet) + parseInt(amt)
-                        }
-                    })
-
+                    
+                            
                     setTimeout(() => {
                         // res.json(
                         //     {
                         //         status: 'success',
                         //         data: payment
                         //     });
-                        res.redirect('/successPayment?payerId=' + payerId + '&paymentId=' + paymentId)
+                        res.redirect('/successPayment?payerId=' + payerId + '&paymentId=' + paymentId+ '&paymentTitle=' + 'Paypal')
                     }, 500);
 
                 }
@@ -159,13 +169,15 @@ router.get('/successPayment', async (req, res) => {
     
     res.render('successPayment', {
         payerId: req.query.payerId,
+        paymentTitle: req.query.paymentTitle,
         paymentId: req.query.paymentId
     })
 })
 
 router.get('/cancelledPayment', async (req, res) => {
     console.log(req.query.q);
-    res.render('cancelledPayment')
+    
+    res.render('cancelledPayment',  { paymentTitle: req.query.paymentTitle})
 })
 
 

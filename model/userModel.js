@@ -15,6 +15,7 @@ let userNewSchema = new schema({
     f_password: String,
     f_phone: Number,
     f_country: String,
+    f_countryName: String,
     f_address: String,
     f_area: String,
     f_city: String,

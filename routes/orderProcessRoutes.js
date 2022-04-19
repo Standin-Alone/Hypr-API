@@ -710,6 +710,7 @@ router.route("/addToWishlist")
                                     {
                                         f_ProductId: ProdDetails.pid,
                                         f_VariantId: ProdDetails.vid,
+                                        f_VariantName: ProdDetails.variantNameEn,
                                         f_ProductPrice: parseInt(ProdDetails.variantSellPrice),                                                                                                                        
                                         f_ProductImg1: ProdDetails.variantImage,                                                                                
                                         f_itemQuantity: 1,
@@ -808,7 +809,7 @@ router.route("/fetchActiveWishlistByUser")
                                     status: true,
                                     code: "S405",
                                     msg: "user's wishlist item fetched!",
-                                    id: result1,
+                                    data: result1,
                                 })
                             }
                         })
@@ -923,6 +924,7 @@ router.route("/checkoutConfirmation")
         console.log(req.body);
         try {
             let _id = userFunctions.santizeInput(req.body.userId);
+            let orderId = userFunctions.santizeInput(req.body.orderId);
             //  let ProductId = userFunctions.santizeInput(req.body.ProductId);
             // let userId = userFunctions.santizeInput(req.body.userId);
             //let password = userFunctions.santizeInput(req.body.password);
@@ -961,16 +963,14 @@ router.route("/checkoutConfirmation")
                         });
                         console.log(buyerCartRecord);
                         //  return
-                        var order_id = await counterSchema.findOneAndUpdate({ _id: "order_id" }, {
-                            $inc: { sequence: 1 }
-                        }, { useFindAndModify: false });
+               
 
                         
                         
                         
                         var options = {
                             f_orderDate: new Date,
-                            f_displayOrderId: order_id.sequence,
+                            f_displayOrderId: orderId,
                             f_paymentMode: req.body.paymentMode,
                             f_orderStatus: 'pending',//req.body.orderStatus,
                             f_paymentmethod: req.body.paymentmethod,
@@ -1057,67 +1057,15 @@ router.route("/checkoutConfirmation")
                                     sequence += 1;
                                     // }
                                 });
-                                db.collection('t_mailtemplet').find({ f_sno: '4411' }).toArray(function (EmailErr, Emailresult) {
-                                    if (EmailErr) throw EmailErr;
-
-                                    var transporter = nodemailer.createTransport({
-                                        service: 'gmail.com',
-                                        host: 'smtp.gmail.com',
-                                        auth: {
-                                            user: 'alamarbaj1920@gmail.com',
-                                            pass: 'arbajalam7379012070'
-                                        }
-                                    });
-                                    // const email_payment_logo = await db.collection('t_seller_images').find({ f_type: "EL", f_show_image: true, f_published: true }).sort({ f_sort_no: 1 }).limit(1).toArray();
-                                    // const email_social_media = await db.collection('t_seller_images').find({ f_type: "SME", f_show_image: true, f_published: true }).sort({ f_sort_no: 1 }).toArray();
-                                    // var i;
-                                    let text = ``;
-
-
-                                    
-                                    // for (i = 0; i < email_social_media.length; i++) {
-                                    //     text += `<a href="${email_social_media[i].f_url}"><img alt="${email_social_media[i].f_alt_text}" src="http://eskillsellerdocs.cstechns.com/SellerDocuments/sellerDocsImg/${email_social_media[i].f_image_name}"/></a>`
-                                    // }
 
 
 
-                                    // var mailOptions = {
-                                    //     from: 'alamarbaj1920@gmail.com',//mailfrom,
-                                    //     to: UserDetails.f_email,//'ati@cstech.in',
-                                    //     cc: 'atti7466@gmail.com',
-                                    //     subject: 'Your order successfully Placed | Hypr',
-                                    //     html: Emailresult[0].f_mailmessage
-                                    //         .replace('{vendorurl}', '<a href="http://beta.hyprweb.com">Click Here</a>')
-                                    //         .replace('{orderdate}', new Date().toISOString().slice(0, 10))
-                                    //         .replace('{orderstatus}', 'Pending')
-                                    //         .replace('{user-name}', UserDetails.f_name)
-                                    //         .replace('{email-logo}', `<a href="http://beta.hyprweb.com/"><img height="80%" width="80%" src="http://beta.hyprweb.com/images/logos/Hypr-Logo.png"/></a>`)
-                                    //         .replace("{socialmedia}",)
-                                    //         .replace('Itsherskill', 'hypr')
-                                    //         .replace('Itsherway', 'hypr')
-                                    //         .replace('http://beta.hyprweb.com', '#')
-                                    //         .replace('http://beta.itsherskill.com/content/SellerPolicy', '#')
-                                    //         .replace('http://beta.itsherskill.com/customer-contactus', '#')
-                                    //         .replace('{copy-right}', '© 2021-2022 hypr.All rights reserved')
-                                    //         .replace('{mpname}', 'hypr')
-                                    //         .replace('{mpname}', 'hypr')
-                                    //         .replace('{mpname}', 'hypr')
-                                    //     // .replace('{email-payment-logo}', `<a href=" "><img src="http://eskillsellerdocs.cstechns.com/SellerDocuments/sellerDocsImg/${email_payment_logo[0].f_image_name}" width="560" alt=""></a>`)
-                                    // };
-                                    // transporter.sendMail(mailOptions, function (error, info) {
-                                    //     if (error) {
-                                    //         console.log(error);
-                                    //     } else {
-                                    //         console.log('Email sent: ' + info.response);
-                                    //     }
-                                    // });
-                                })
                                 var opts = {
                                     TransactionAmount: total_amount,
                                     TransactionType: "Debited",
                                     Remark: "Product  Purchase",
                                     ByUserId: "Admin",
-                                    f_orderId: insertRes.f_displayOrderId + '-0' + (sequence + 1),
+                                    f_orderId: insertRes.f_displayOrderId,
                                     f_userId: UserDetails._id,
                                     // f_name: UserDetails..f_name,
                                     // f_email: UserDetails.f_wallet.f_email,
@@ -1128,7 +1076,7 @@ router.route("/checkoutConfirmation")
                                     // f_transactions: response.body.transactions,
                                     createdAt: Date.now()
                                 }
-                                console.log(opts);
+             
 
                                 await paypalOrderSchema.create(opts, async (err, insertRes) => {
                                     if (err) {
@@ -1140,25 +1088,17 @@ router.route("/checkoutConfirmation")
                                         })
                                     } else if (insertRes != null && insertRes != '') {
 
-                                        setTimeout(async () => {
-                                            var remaingMoney = parseInt(UserDetails.f_wallet - total_amount)
-                                            console.log(remaingMoney);
-                                            console.log(UserDetails.f_wallet + '--' + remaingMoney + '--' + total_amount);
-                                            await UsersSchema.updateOne({ _id: mongoose.Types.ObjectId(UserDetails._id) }, {
-                                                $set: {
-                                                    f_wallet: remaingMoney// parseInt(req.user.f_wallet) - parseInt(totalAmnt)
-                                                }
-                                            })
+                                        setTimeout(async () => {                                            
+                                            
                                             await CartSchema.remove({ f_buyerId: UserDetails._id }, (err, docs) => {
                                                 if (err) throw err;
                                                 // res.send(docs)
-
                                             })
                                             res.json({
                                                 status: true,
                                                 code: "S405",
                                                 msg: "Order created successfully..",
-                                                order_id: order_id.sequence
+                                                order_id: orderId
                                             })
                                         }, 1000);
                                     }
@@ -2038,5 +1978,75 @@ router.route("/updateAddress")
 
 
 
+
+
+router.route("/getMyOrders")
+    .get((req, res, next) => {
+        res.json({
+            status: false,
+            code: "E131"
+        })
+    }).post(async (req, res) => {
+        //var categoryType = await catTypeSchema.find();
+        try {
+
+            let _id = userFunctions.santizeInput(req.body.userId);
+      
+            //let password = userFunctions.santizeInput(req.body.password);
+            if (_id != null) {
+                //fetch the username and password from db and check if they match
+
+                UsersSchema.find({
+                    _id: mongoose.Types.ObjectId(_id),
+                }, {
+                    __v: 0,
+                    createdAt: 0,
+                    password: 0,
+                    updatedAt: 0
+                }, (err, result) => {
+                    // console.log(result);
+                    if (err) {
+                        console.log("Error in user.find login " + err);
+                        res.json({
+                            status: false,
+                            msg: userFunctions.mongooseErrorHandle(err),
+                            code: "E130"
+                        });
+                    } else if (result == null || result == undefined || result == '') {
+                        res.json({
+                            status: false,
+                            msg: "There is no account associated with this Userid, Pls login first!",
+                            code: "E123"
+                        });
+                    } else {
+                        orderSchema.find({f_buyerId:mongoose.Types.ObjectId(_id)}, (err, result1) => {
+                            console.warn(err);
+                            console.log('result',result);
+                            // res.send(result)
+                            res.json({
+                                status: true,
+                                msg: "user orders data fetched successfully",
+                                data: result1
+                            });
+                        });
+
+                    }
+                })
+
+            }
+
+
+
+        } catch (e) {
+            console.log("Catch in usersignup api " + e);
+            res.json({
+                status: false,
+                code: "E109",
+                msg: genericErrorMessage
+            })
+        }
+
+
+    })
 
 module.exports = router;

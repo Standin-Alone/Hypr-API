@@ -51,6 +51,7 @@ global.transporter = nodemailer.createTransport({
         pass: '01000webdeveloper'
     }
 });
+
 global.sns = new AWS.SNS({
     apiVersion: process.env.SNS_API_VERSION,
     region: process.env.SNS_REGION

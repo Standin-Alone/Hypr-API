@@ -862,6 +862,17 @@ function countryCodeArray() {
   ];
 }
 
+function productsJSONFormat(results) {
+  return {
+    code: 200,
+    result: true,
+    message: "Success",
+    data: {
+      list: results,
+    },
+  };
+}
+
 methods.getCountryCode = (req, res) => {
   let response = new Country();
 
@@ -909,7 +920,27 @@ methods.getToken = (req, res) => {
     });
 };
 
-methods.getProducts = (req, res) => {
+methods.getProducts = async (req, res) => {
+  const page = checkParamsIfUndefined(req) ? "1" : req.query.pageNum;
+  const results = [];
+  const query = await db
+    .collection("t_api_products")
+    .find({ page_number: { $eq: page } })
+    .limit(20);
+
+  query.toArray(function (err, docs) {
+    docs.forEach((documents) => {
+      results.push(documents.product_information);
+    });
+
+    const format = productsJSONFormat(results);
+
+    if (err) return res.status(500).send({ error: err });
+    res.json(format);
+  });
+};
+
+methods.getProductsInAPI = (req, res) => {
   const token = req.cookies.auth;
   const search = _getParamString(req);
 
@@ -969,6 +1000,14 @@ methods.getVariants = (req, res) => {
     });
 };
 
+function checkParamsIfUndefined(req) {
+  // temporary checking
+  const _ = require('lodash');
+  if (_.isUndefined(req.query.pageNum)) {
+    return true;
+  }
+  return false;
+}
 function _getParamString(req) {
   let search = null,
     i = 0;
@@ -1037,7 +1076,7 @@ methods.createOrder = (req, res) => {
       vid: body[i].vid,
     };
   }
-  console.warn('logistic',req.body);
+
   let shipping = new Shipping(
     req.body.fccode,
     req.body.logistic,
@@ -1064,7 +1103,6 @@ methods.createOrder = (req, res) => {
     }
   )
     .then((response) => {
-
       if (!response.ok) {
         throw "error on fetching token";
       }
@@ -1074,7 +1112,6 @@ methods.createOrder = (req, res) => {
       return res.send(response);
     })
     .catch((err) => {
-   
       res.send({ response: `something went wrong :< ${err}` });
       if (err.name === "AbortError") {
         res.send("Timed out");
@@ -1197,12 +1234,15 @@ methods.confirmOrder = (req, res) => {
     }
   )
     .then((response) => {
+
+      
       if (!response.ok) {
         throw "error on fetching token";
       }
       return response.json();
     })
     .then((response) => {
+      console.warn(response)
       return res.send(response);
     })
     .catch((err) => {
@@ -1322,14 +1362,7 @@ methods.searchProducts = async (req, res) => {
       results.push(documents.product_information);
     });
 
-    const format = {
-      code: 200,
-      result: true,
-      message: "Success",
-      data: {
-        list: results,
-      },
-    };
+    const format = productsJSONFormat(results);
 
     if (err) return res.status(500).send({ error: err });
     res.json(format);

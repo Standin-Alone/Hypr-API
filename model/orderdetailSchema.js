@@ -38,6 +38,8 @@ let orderDetailsNewSchema = new schema({
     f_cancelSubject : String,
     f_cancelReason : String,
     f_variantName : String,
+    f_shippingAddress : Array,
+    f_freightCalculation : Array,
     status:   Boolean ,
     createdAt:   Date ,
     updatedAt:   Date 

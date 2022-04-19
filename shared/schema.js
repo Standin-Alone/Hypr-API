@@ -11,6 +11,7 @@ global.StateSchema = require('../model/stateSchema')
 global.CitySchema = require('../model/citySchema')
 global.PincodeSchema = require('../model/pinCodeSchema')
 global.paypalOrderSchema = require('../model/paypalOrderschema')
+global.stripeOrdersSchema = require('../model/stripeOrdersSchema')
 global.helpNsupportSchema = require('../model/helpsupportSchema')
 
 //socail
