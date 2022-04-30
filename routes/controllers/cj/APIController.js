@@ -1352,7 +1352,7 @@ methods.searchProducts = async (req, res) => {
   const results = [];
   const query = await db
     .collection("t_api_products")
-    .find({ $text: { $search: `/${searchValue}/` } })
+    .find({ $text: { $search: `/.*${searchValue}.*/` } })
     .limit(20)
     .skip(skips)
     .project({ product_information: 1, _id: 0 });
